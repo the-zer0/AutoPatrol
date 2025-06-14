@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Police Dashboard</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        video {
+            width: 600px;
+            border: 2px solid #333;
+            margin-bottom: 10px;
+        }
+
+        button {
+            padding: 10px;
+            margin: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #platesList {
+            margin-top: 15px;
+            font-weight: bold;
+        }
+
+        #status {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Welcome, {{ username }}</h1>
+
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" name="video" accept="video/*" required>
+        <button type="submit">Upload and Play</button>
+    </form>
+
+    <video id="videoPlayer" controls></video>
+
+    <div>
+        <button id="redBtn" style="background:red; color:white;">Red Signal</button>
+        <button id="greenBtn" style="background:green; color:white;">Green Signal</button>
+    </div>
+
+    <div>
+        <p>Current Signal: <span id="signal">green</span></p>
+        <p id="status">Idle</p>
+        <p>Detected Plates:</p>
+        <ul id="platesList"></ul>
+    </div>
+
+    <script>
+        let detectionInterval = null;
+
+        $('#uploadForm').submit(function (e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+
+            $.ajax({
+                url: '/upload_video',
+                type: 'POST',
+                data: formData,
+                contentType: false,
+                processData: false,
+                success: function (response) {
+                    const videoName = response.filename;
+                    $('#videoPlayer').attr('src', '/video/' + videoName);
+                    $('#videoPlayer')[0].play();
+                    $('#status').text('Video playing...');
+                    startDetectionLoop();
+                },
+                error: function () {
+                    alert('Failed to upload video');
+                }
+            });
+        });
+
+        $('#redBtn').click(() => toggleSignal('red'));
+        $('#greenBtn').click(() => toggleSignal('green'));
+
+        function toggleSignal(signal) {
+            $.ajax({
+                url: '/toggle_signal',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ signal: signal }),
+                success: function (res) {
+                    if (res.success) {
+                        $('#signal').text(res.signal);
+                    }
+                }
+            });
+        }
+
+        function startDetectionLoop() {
+            if (detectionInterval) clearInterval(detectionInterval);
+
+            detectionInterval = setInterval(() => {
+                $.getJSON('/detection_status', function (data) {
+                    $('#signal').text(data.signal);
+
+                    if (data.video_processing) {
+                        $('#status').text('Video processing...');
+                    } else if (data.video_finished) {
+                        $('#status').text('Video finished.');
+                        clearInterval(detectionInterval);
+                    } else {
+                        $('#status').text('Idle');
+                    }
+
+                    // Update detected plates list
+                    const platesUl = $('#platesList');
+                    platesUl.empty();
+                    data.latest_plates.forEach(plate => {
+                        platesUl.append(`<li>${plate}</li>`);
+                    });
+                });
+            }, 1500); // poll every 1.5 seconds
+        }
+
+        // Pause detection updates when video ends
+        $('#videoPlayer').on('ended', function () {
+            clearInterval(detectionInterval);
+            $('#status').text('Video ended.');
+        });
+    </script>
+</body>
+
+</html>

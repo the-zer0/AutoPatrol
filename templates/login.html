@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Traffic Management Login</title>
+    <style>
+        body, html {
+            margin: 0; padding: 0; height: 100%; font-family: Arial, sans-serif;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .half {
+            flex: 1;
+            padding: 40px;
+            box-sizing: border-box;
+        }
+        .left {
+            background-color: #f0f0f0;
+            border-right: 2px solid #ccc;
+        }
+        .right {
+            background-color: #fff;
+        }
+        h2 {
+            margin-bottom: 20px;
+        }
+        input[type=text], input[type=password], input[type=search] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0 20px 0;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .msg {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Police Login -->
+        <div class="half left">
+            <h2>Police Login</h2>
+            <form method="POST" action="/login">
+                <input type="text" name="username" placeholder="Username" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            {% if msg %}
+                <div class="msg">{{ msg }}</div>
+            {% endif %}
+        </div>
+
+        <!-- Citizen Search -->
+        <div class="half right">
+            <h2>Citizen Vehicle Violation Search</h2>
+            <form method="GET" action="/search_violation">
+                <input type="search" name="plate_number" placeholder="Enter Vehicle Number Plate" required>
+                <button type="submit">Search</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
